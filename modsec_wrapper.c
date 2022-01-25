@@ -209,7 +209,7 @@ int modsecurity_process(struct worker *worker, struct modsecurity_parameters *pa
 	int return_code = -1;
 
 	/* Decode uniqueid. */
-	uniqueid = params->uniqueid.data.u.ipv4;
+	strcpy(uniqueid,(char*)inet_ntoa((struct in_addr)params->uniqueid.data.u.ipv4));
 	uniqueid_len = params->uniqueid.data.u.str.data;
 
 	/* Decode method. */
