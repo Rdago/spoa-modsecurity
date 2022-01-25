@@ -208,9 +208,10 @@ int modsecurity_process(struct worker *worker, struct modsecurity_parameters *pa
 	int status;
 	int return_code = -1;
 
-	/* Decode uniqueid. */
-	strcpy(uniqueid,(char*)inet_ntoa((struct in_addr)params->uniqueid.data.u.ipv4));
-	uniqueid_len = params->uniqueid.data.u.str.data;
+	/* Decode uniqueid. which now is src ip */
+        uniqueid = inet_ntoa(params->uniqueid.data.u.ipv4);
+        uniqueid_len = params->uniqueid.data.u.sint;
+
 
 	/* Decode method. */
 	meth = params->method.data.u.str.area;
@@ -546,9 +547,9 @@ int modsecurity_process(struct worker *worker, struct modsecurity_parameters *pa
 
 	req->filename = req->parsed_uri.path;
 
-	/* Set unique id */
+	/* Set unique id which now is src ip */
 
-	apr_table_setn(req->subprocess_env, "UNIQUE_ID", chunk_strdup(req, uniqueid, uniqueid_len));
+	apr_table_setn(req->subprocess_env, "UNIQUE_ID", uniqueid);
 
 	/*
 	 *
