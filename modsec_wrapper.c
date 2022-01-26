@@ -16,6 +16,10 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include <sys/time.h>
+#include <string.h>
+
+
 #include <haproxy/intops.h>
 #include <haproxy/sample-t.h>
 
@@ -40,6 +44,7 @@ struct apr_bucket_haproxy {
 	char *buffer;
 	size_t length;
 };
+
 
 static void haproxy_bucket_destroy(void *data)
 {
@@ -170,6 +175,26 @@ struct modsec_hdr {
 	uint64_t value_len;
 };
 
+
+static char *randstring(size_t length) {
+  static char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/=+";
+  char *randomString = NULL;
+
+  if (length) {
+     randomString = malloc(sizeof(char) * (length +1));
+     if (randomString) {
+        for (int n = 0;n < length;n++) {
+            int key = rand() % (int)(sizeof(charset) -1);
+             randomString[n] = charset[key];
+         }
+
+         randomString[length] = '\0';
+      }
+  }
+  return randomString;
+}
+
+
 int modsecurity_process(struct worker *worker, struct modsecurity_parameters *params)
 {
 	struct conn_rec *cr;
@@ -190,6 +215,7 @@ int modsecurity_process(struct worker *worker, struct modsecurity_parameters *pa
 	char *buf;
 	char *end;
 	const char *uniqueid;
+        char * randomuid;
 	uint64_t uniqueid_len;
 	const char *meth;
 	uint64_t meth_len;
@@ -208,10 +234,27 @@ int modsecurity_process(struct worker *worker, struct modsecurity_parameters *pa
 	int status;
 	int return_code = -1;
 
-	/* Decode uniqueid. which now is src ip */
-        uniqueid = inet_ntoa(params->uniqueid.data.u.ipv4);
-        uniqueid_len = params->uniqueid.data.u.sint;
+// Random things
+        struct timeval time;
+        gettimeofday(&time,NULL);
+        srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
 
+
+	/* Decode uniqueid. (Format: [IP][RANDOMSTRING]*/
+
+        randomuid = randstring(10);
+// 1: malloc enough memory
+        char * temp = malloc(strlen(inet_ntoa(params->uniqueid.data.u.ipv4)) + strlen(randomuid));
+// 2: copy ip addr to new char*
+	strcpy(temp, inet_ntoa(params->uniqueid.data.u.ipv4));
+// 3: cat randomstrin(20) to new char*
+        strcat(temp, randomuid);
+        free(temp);
+// 4: assign new char* to unique id
+        uniqueid = temp;
+
+// inet_ntoa(params->uniqueid.data.u.ipv4);
+        uniqueid_len = params->uniqueid.data.u.sint;
 
 	/* Decode method. */
 	meth = params->method.data.u.str.area;
@@ -547,9 +590,9 @@ int modsecurity_process(struct worker *worker, struct modsecurity_parameters *pa
 
 	req->filename = req->parsed_uri.path;
 
-	/* Set unique id which now is src ip */
+	/* Set unique id */
 
-	apr_table_setn(req->subprocess_env, "UNIQUE_ID", uniqueid);
+	apr_table_setn(req->subprocess_env, "UNIQUE_ID", chunk_strdup(req, uniqueid, strlen(uniqueid)));
 
 	/*
 	 *
