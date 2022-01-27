@@ -1244,7 +1244,7 @@ worker_monitor_cb(evutil_socket_t fd, short events, void *arg)
 {
 	struct worker *worker = arg;
 
-	LOG(worker, "%u clients connected", worker->nbclients);
+	DEBUG(worker, "%u clients connected", worker->nbclients);
 }
 
 static void
@@ -1474,11 +1474,11 @@ read_frame_cb(evutil_socket_t fd, short events, void *arg)
 		case SPOA_ST_DISCONNECTING:
 		  disconnecting:
 			if (handle_hadiscon(frame) < 0) {
-				LOG(client->worker, "Failed to decode DISCONNECT frame");
+				DEBUG(client->worker, "Failed to decode DISCONNECT frame");
 				goto disconnect;
 			}
 			if (client->status_code != SPOE_FRM_ERR_NONE)
-				LOG(client->worker, "<%lu> Peer closed connection: %s",
+				DEBUG(client->worker, "<%lu> Peer closed connection: %s",
 				    client->id, spoe_frm_err_reasons[client->status_code]);
 			goto disconnect;
 	}
