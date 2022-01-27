@@ -50,7 +50,7 @@ struct worker {
 		gettimeofday(&now, NULL);				\
 		t = now.tv_sec;                                         \
 		info = localtime(&t);                                   \
-		strftime (buffer, sizeof buffer, "%Y-%m-%d %T"", info);    \
+		strftime (buffer, sizeof buffer, "%Y-%m-%d %T", info);    \
 		fprintf(stderr, "MODSECURITY %s " fmt "\n",		\
 			buffer,  ##args);	\
 	} while (0)
