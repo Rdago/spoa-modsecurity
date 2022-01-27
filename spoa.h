@@ -44,10 +44,15 @@ struct worker {
 #define LOG(worker, fmt, args...)                                       \
 	do {								\
 		struct timeval  now;					\
-                                                                        \
+                time_t t;                                               \
+		char buffer[64];                                        \
+		struct tm *info;                                        \
 		gettimeofday(&now, NULL);				\
-		fprintf(stderr, "%ld.%06ld [%02d] " fmt "\n",		\
-			now.tv_sec, now.tv_usec, (worker)->id, ##args);	\
+		t = now.tv_sec;                                         \
+		info = localtime(&t);                                   \
+		strftime (buffer, sizeof buffer, "%Y-%m-%d %T"", info);    \
+		fprintf(stderr, "MODSECURITY %s " fmt "\n",		\
+			buffer,  ##args);	\
 	} while (0)
 
 #endif /* __SPOA_H__ */
